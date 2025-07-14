@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Mahjong Match Maker 🀄</title>
+  <style>
+    body {
+      font-family: "Segoe UI", sans-serif;
+      padding: 2rem;
+      margin: 0;
+      background-color: #fff8ff;
+      background-image: url('image.png'); /* 🌸 imagem kawaii */
+      background-repeat: no-repeat;
+      background-position: right bottom;
+      background-attachment: fixed;
+      background-size: 350px;
+      color: #444;
+    }
+    h1, h2 {
+      color: #cc3399;
+    }
+    textarea {
+      width: 100%;
+      height: 150px;
+      margin-bottom: 1rem;
+      padding: 1rem;
+      font-size: 1rem;
+      border: 2px solid #f3c4e6;
+      border-radius: 10px;
+      background: #fff0f7;
+    }
+    button {
+      padding: 0.75rem 1.5rem;
+      font-size: 1rem;
+      margin-bottom: 1rem;
+      border: none;
+      border-radius: 10px;
+      background-color: #ff66aa;
+      color: white;
+      cursor: pointer;
+      box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+    }
+    button:hover {
+      background-color: #ff4499;
+    }
+    .match {
+      border: 2px solid #ffcce6;
+      border-radius: 15px;
+      padding: 1rem;
+      margin: 1rem 0;
+      background: #fffafd;
+      box-shadow: 0 3px 6px rgba(0,0,0,0.05);
+    }
+    .match h3 {
+      margin-top: 0;
+      color: #cc3399;
+    }
+    ul {
+      list-style: none;
+      padding-left: 0;
+    }
+    ul li {
+      padding: 0.3rem 0;
+      font-size: 1.1rem;
+    }
+    .wind {
+      font-weight: bold;
+      margin-right: 0.5rem;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1.5rem;
+      background: #fffefe;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+    }
+    th, td {
+      padding: 0.6rem;
+      border: 1px solid #f0d0e8;
+      text-align: center;
+    }
+    th {
+      background-color: #ffe6f0;
+      color: #bb2288;
+    }
+    input[type="number"] {
+      border: 1px solid #ffbde0;
+      border-radius: 8px;
+      padding: 0.3rem;
+      background-color: #fffafd;
+    }
+  </style>
+</head>
+<body>
+  <h1>Mahjong Match Maker 🀄</h1>
+  <p>Digite um jogador por linha:</p>
+  <textarea id="playerInput" placeholder="Ex:&#10;Alice&#10;Bob&#10;Charlie&#10;..."></textarea>
+  <br/>
+  <button onclick="generateMatches()">Gerar Partidas</button>
+  <div id="output"></div>
+
+  <h2>Resultados 💕</h2>
+  <div id="resultsSection"></div>
+  <button onclick="calculateResults()">Calcular Pontuação Final</button>
+
+  <h2>Tabela de Pontuação Final 📝</h2>
+  <div id="finalResults"></div>
+
+  <script>
+    let allPlayers = [];
+
+    function shuffleArray(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+    }
+
+    function generateMatches() {
+      const input = document.getElementById("playerInput").value.trim();
+      let players = input.split("\n").map(p => p.trim()).filter(p => p !== "");
+
+      const remainder = players.length % 4;
+      if (remainder !== 0) {
+        alert(`O número de jogadores deve ser divisível por 4! Você inseriu ${players.length} jogadores.`);
+        return;
+      }
+
+      shuffleArray(players);
+      allPlayers = [];
+
+      const outputDiv = document.getElementById("output");
+      const resultsDiv = document.getElementById("resultsSection");
+      outputDiv.innerHTML = "";
+      resultsDiv.innerHTML = "";
+
+      const winds = ["東", "南", "西", "北"];
+      const matchCount = players.length / 4;
+
+      for (let i = 0; i < matchCount; i++) {
+        const matchPlayers = players.slice(i * 4, i * 4 + 4);
+        shuffleArray(winds);
+
+        const matchDiv = document.createElement("div");
+        matchDiv.className = "match";
+        matchDiv.innerHTML = `
+          <h3>Partida ${i + 1}</h3>
+          <ul>
+            ${matchPlayers.map((p, idx) => {
+              const id = `p${i}_${idx}`;
+              allPlayers.push({ name: p, id });
+              return `<li><span class="wind">${winds[idx]}</span> ${p}</li>`;
+            }).join("")}
+          </ul>
+        `;
+        outputDiv.appendChild(matchDiv);
+      }
+
+      // Tabela de entrada de resultados
+      const table = document.createElement("table");
+      table.innerHTML = `
+        <thead>
+          <tr>
+            <th>Jogador</th>
+            <th>Rank (1-4)</th>
+            <th>Pontuação (ex: 24.3)</th>
+            <th>Chombo (0/1)</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${allPlayers.map(p => `
+            <tr>
+              <td>${p.name}</td>
+              <td><input type="number" id="rank_${p.id}" min="1" max="4" /></td>
+              <td><input type="number" id="score_${p.id}" step="0.1" /></td>
+              <td><input type="number" id="chombo_${p.id}" min="0" max="1" /></td>
+            </tr>
+          `).join("")}
+        </tbody>
+      `;
+      resultsDiv.appendChild(table);
+    }
+
+    function calculateResults() {
+      const umaMap = { 1: 15, 2: 5, 3: -5, 4: -15 };
+      const finalDiv = document.getElementById("finalResults");
+      let rows = "";
+
+      allPlayers.forEach(p => {
+        const rank = parseInt(document.getElementById(`rank_${p.id}`).value);
+        const score = parseFloat(document.getElementById(`score_${p.id}`).value);
+        const chombo = parseInt(document.getElementById(`chombo_${p.id}`).value);
+
+        if (![1, 2, 3, 4].includes(rank) || isNaN(score) || (chombo !== 0 && chombo !== 1)) {
+          rows += `<tr><td colspan="6">⚠️ Dados inválidos ou faltando para ${p.name}</td></tr>`;
+          return;
+        }
+
+        const uma = umaMap[rank];
+        const finalScore = score + uma - (chombo === 1 ? 20 : 0);
+
+        rows += `
+          <tr>
+            <td>${p.name}</td>
+            <td>${rank}</td>
+            <td>${uma > 0 ? "+" + uma : uma}</td>
+            <td>${score.toFixed(1)}</td>
+            <td>${chombo}</td>
+            <td>${finalScore.toFixed(1)}</td>
+          </tr>
+        `;
+      });
+
+      finalDiv.innerHTML = `
+        <table>
+          <thead>
+            <tr>
+              <th>Jogador</th>
+              <th>Rank</th>
+              <th>Uma</th>
+              <th>Pontuação</th>
+              <th>Chombo</th>
+              <th>Final</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      `;
+    }
+  </script>
+</body>
+</html>
